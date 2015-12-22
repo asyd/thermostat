@@ -3,19 +3,36 @@
 import sys
 from PyQt4 import QtGui, QtCore, uic
 import logging
+from datetime import datetime
 
 
-class Boiler(object):
+class Boiler(QtCore.QObject):
+    STATE_ENABLED = 1
+    STATE_DISABLED = 0
+    STATE_CAN_BE_CHANGED = 1
+
     def __init__(self):
-        #
-        self.state = False
-        logging.debug("New Boiler class created")
+        logging.debug("New Boiler class created, ensure everything is disabled")
+        self.current_state = self.STATE_DISABLED
+        self.last_state = self.STATE_DISABLED
+        self.last_event = datetime.now()
+        self.switchoff()
 
     def force(self):
         logging.debug("Force boiler to on")
 
-    def ping(self):
+    def switchon(self):
+        logging.debug("Boiler switch to on")
+
+    def switchoff(self):
+        logging.debug("Boiler switch to off")
+
+    def switchavailable(self):
         logging.debug("boiler: ping")
+        if (not self.current_state and not self.last_state):
+            return True
+        else:
+            return False
 
 
 class ThermostatApp(QtGui.QMainWindow):
@@ -26,13 +43,19 @@ class ThermostatApp(QtGui.QMainWindow):
         self.ui = uic.loadUi('thermostat.ui')
         self.ui.show()
 
-        self.connect(self.ui.forceButton, QtCore.SIGNAL("clicked()"), self.boiler.ping)
+        self.connect(self.ui.forceButton, QtCore.SIGNAL("clicked()"), self.boiler_force)
         self.timer = QtCore.QTimer()
-        self.connect(self.timer, QtCore.SIGNAL("timeout()"), self.boiler.ping)
+        self.connect(self.timer, QtCore.SIGNAL("timeout()"), self.check_boiler)
         self.timer.start(1000)
 
     def boiler_force(self):
-        self.boiler.force()
+        self.boiler.switchon()
+
+    def check_boiler(self):
+        if self.boiler.switchavailable():
+            self.ui.forceButton.setEnabled(True)
+        else:
+            self.ui.forceButton.setEnabled(False)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
