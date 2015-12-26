@@ -11,6 +11,7 @@ import datetime
 import zmq
 import logging
 import threading
+import json
 
 
 PUB_INTERVAL = 10
@@ -24,6 +25,7 @@ class Boiler(object):
     def __init__(self):
         logging.debug("New Boiler class created, ensure everything is disabled")
         self.current_state = self.STATE_DISABLED
+        self.current_temp = 'NA'
         self.last_state = self.STATE_DISABLED
         self.last_event = datetime.datetime.now()
         self.switchoff()
@@ -35,7 +37,7 @@ class Boiler(object):
         logging.debug("Boiler switch to off")
 
     def json_status(self):
-        return {'boiler': {'status': self.current_state}}
+        return json.dumps({'status': self.current_state, 'temperature': 'NA'})
 
 
 def status_publisher():
