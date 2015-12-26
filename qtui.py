@@ -4,7 +4,7 @@ import sys
 import logging
 import zmq
 import json
-from PyQt5 import QtCore, QtWidgets, QtGui, uic
+from PyQt5 import QtCore, QtWidgets, uic
 
 
 class BoilerStatusListener(QtCore.QObject):
@@ -27,7 +27,7 @@ class BoilerStatusListener(QtCore.QObject):
             logging.debug("Receive message %s from 0mq" % string)
             # Remove topic
             string = string.replace('boiler ', '', 1)
-            # self.message.emit(string)
+            self.message.emit(string)
 
 
 class ThermostatApp(QtWidgets.QMainWindow):
@@ -40,16 +40,17 @@ class ThermostatApp(QtWidgets.QMainWindow):
         self.ui.show()
 
         self.ui.forceButton.clicked.connect(self.boiler_force)
+        self.ui.forceButton.setEnabled(False)
         # self.connect(self.ui.forceButton, QtCore.SIGNAL("clicked()"), self.boiler_force)
         #
-        # self.listener = BoilerStatusListener()
-        # self.listener.moveToThread(self.thread)
-        # self.thread.started.connect(self.listener.loop)
-        # self.listener.message.connect(self.signal_received)
+        self.listener = BoilerStatusListener()
+        self.listener.moveToThread(self.thread)
+        self.thread.started.connect(self.listener.loop)
+        self.listener.message.connect(self.signal_received)
         #
-        # QtCore.QTimer.singleShot(0, self.thread.start)
-        # # Disable the force button by default
-        # self.ui.forceButton.setEnabled(False)
+        QtCore.QTimer.singleShot(0, self.thread.start)
+        # Disable the force button by default
+        self.ui.forceButton.setEnabled(False)
 
     def boiler_force(self):
         logging.debug("Force boiler to on")
